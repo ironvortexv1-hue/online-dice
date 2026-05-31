@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Color Dice - Multi-Device</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial Black', Gadget, sans-serif;
+            background-color: #a4d4fc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+
+        .main-card {
+            background-color: #4daafc;
+            border: 4px solid #ffffff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            text-align: center;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .logo-mu {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: #ffffff;
+            border: 2px solid #a4d4fc;
+            color: #4daafc;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .title {
+            color: #ffffff;
+            font-size: 24px;
+            text-transform: uppercase;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .dropdown-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .select-box {
+            flex: 1;
+            background-color: #ffffff;
+            border: 3px solid #3391ed;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 15px;
+            font-family: 'Arial Black', sans-serif;
+            color: #1d74cd;
+            text-transform: uppercase;
+            outline: none;
+            text-align: center;
+        }
+
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        /* 🛠️ MODIFIKASI CSS: MEMBUAT TEKSTUR FISIK DADU 3D 🛠️ */
+        .dice {
+            width: 75px;
+            height: 75px;
+            border-radius: 14px;
+            border: 4px solid #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(0,0,0,0.15) 100%);
+            box-shadow: 
+                0 5px 10px rgba(0,0,0,0.2), 
+                inset 0 4px 6px rgba(255,255,255,0.45), 
+                inset 0 -4px 6px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        }
+
+        /* Titik Putih Tengah Dadu Lebih Presisi dan Berdimensi */
+        .dice-dot {
+            width: 15px;
+            height: 15px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.3), inset 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .roll-btn {
+            background: linear-gradient(to bottom, #ffe600, #ffcc00);
+            border: 3px solid #ffffff;
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: 'Arial Black', sans-serif;
+            font-size: 20px;
+            padding: 12px 0;
+            width: 100%;
+            cursor: pointer;
+            text-shadow: 1px 2px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 0px #d4aa00, 0 8px 10px rgba(0,0,0,0.15);
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .roll-btn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+            box-shadow: 0 5px 0px #d4aa00, 0 8px 10px rgba(0,0,0,0.15);
+        }
+
+        .info-bar {
+            background-color: #2b8eeb;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 11px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .c-red { color: #ff3333; }
+        .c-orange { color: #ff9900; }
+        .c-yellow { color: #ffea00; }
+        .c-green { color: #2cd432; }
+        .c-blue { color: #00e5ff; }
+        .c-purple { color: #e040fb; }
+
+        /* ======================================================= */
+        /* CLOUD INTERFACE ADVANCED (MULTI-DEVICE) */
+        /* ======================================================= */
+        .cloud-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+        .cloud-panel {
+            background: #1e272e;
+            color: #ffffff;
+            width: 92%;
+            max-width: 420px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #05c46b;
+            box-sizing: border-box;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .cloud-panel h3 {
+            margin-top: 0; color: #05c46b; text-align: center;
+            border-bottom: 1px solid #3d4e5d; padding-bottom: 10px; font-size: 18px;
+        }
+        
+        /* Section P2P Jaringan */
+        .net-box {
+            background: #2d3436; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px;
+        }
+        .room-badge {
+            display: inline-block; background: #05c46b; color: #fff; padding: 3px 8px; 
+            border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 14px;
+        }
+        .net-input-row {
+            display: flex; gap: 5px; margin-top: 8px;
+        }
+        .net-input {
+            flex: 1; padding: 6px; border-radius: 4px; border: 1px solid #718093; background: #1e272e; color: #fff; text-align: center;
+        }
+        .net-btn {
+            background: #0984e3; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;
+        }
+
+        .matrix-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; background: #2f3640; padding: 6px 12px; border-radius: 6px;
+        }
+        .matrix-label { font-size: 13px; font-weight: bold; }
+        .matrix-input {
+            width: 55px; padding: 5px; border-radius: 4px; border: 1px solid #718093;
+            background: #1e272e; color: #fff; text-align: center; font-weight: bold;
+        }
+        .cloud-footer { margin-top: 15px; display: flex; gap: 10px; }
+        .cloud-btn { flex: 1; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #05c46b; color: #fff; }
+        .btn-close { background: #ff5e57; color: #fff; }
+
+        /* ======================================================= */
+        /* UI TAMBAHAN: LOGIN OVERLAY SCREEN */
+        /* ======================================================= */
+        .login-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 22, 30, 0.95);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+        .login-panel {
+            background: #232c3d;
+            border: 2px solid #3391ed;
+            padding: 25px;
+            border-radius: 12px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .login-panel h4 {
+            margin: 0 0 15px 0;
+            color: #ffffff;
+            font-size: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .login-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #3391ed;
+            background: #1a222f;
+            color: #ffffff;
+            font-size: 16px;
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            letter-spacing: 3px;
+        }
+        .login-btn-row {
+            display: flex;
+            gap: 10px;
+        }
+        .login-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .l-btn-enter { background: #3391ed; color: #fff; }
+        .l-btn-cancel { background: #4b5563; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="logo-mu" onclick="triggerCloudPanel()">MU</div>
+        <div class="title">Online Dice</div>
+
+        <div class="dropdown-row">
+            <select class="select-box" id="dice-count" onchange="window.handleRoll()">
+                <option value="4">4 Dice</option>
+                <option value="3">3 Dice</option>
+                <option value="2">20 Dice</option>
+                <option value="1">1 Dice</option>
+            </select>
+            <select class="select-box"><option>Color Dice</option></select>
+        </div>
+
+        <div class="dice-container">
+            <div class="dice" id="d0" style="background-color: #ff9900;"><div class="dice-dot"></div></div>
+            <div class="dice" id="d1" style="background-color: #ffea00;"><div class="dice-dot"></div></div>
+            <div class="dice" id="d2" style="background-color: #cc0000;"><div class="dice-dot"></div></div>
+            <div class="dice" id="d3" style="background-color: #510475;"><div class="dice-dot"></div></div>
+        </div>
+
+        <button class="roll-btn" id="rollBtn" onclick="window.handleRoll()">Roll Again !</button>
+
+        <div class="info-bar">
+            Possible colors are: <span class="c-red">Red</span>, <span class="c-orange">Orange</span>, <span class="c-yellow">Yellow</span>, <span class="c-green">Green</span>, <span class="c-blue">Blue</span>, and <span class="c-purple">Purple</span>.
+        </div>
+    </div>
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-panel">
+            <h4>🔑 Admin Verification</h4>
+            <input type="password" class="login-input" id="loginPassword" placeholder="ENTER PIN">
+            <div class="login-btn-row">
+                <button class="login-btn l-btn-cancel" onclick="closeLoginPanel()">BATAL</button>
+                <button class="login-btn l-btn-enter" onclick="checkLoginPassword()">MASUK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cloud-overlay" id="cloudOverlay">
+        <div class="cloud-panel">
+            <h3>☁️ Cloud Controller Intercom</h3>
+            
+            <div class="net-box">
+                <div>KODE KAMAR HP INI: <span class="room-badge" id="myRoomId">Memuat...</span></div>
+                <div style="margin-top: 5px; color:#aaa;" id="connStatus">Status Jaringan: Mandiri (Solo)</div>
+                <div class="net-input-row">
+                    <input type="text" class="net-input" id="targetRoomId" placeholder="Masukkan Kode HP A">
+                    <button class="net-btn" onclick="connectToRemoteDevice()">SAMBUNGKAN</button>
+                </div>
+            </div>
+            
+            <div class="matrix-row"><span class="matrix-label" style="color:#ff3333;">🔴 MERAH (Red)</span><input type="number" class="matrix-input" id="m_red" value="0" min="0" max="4"></div>
+            <div class="matrix-row"><span class="matrix-label" style="color:#ff9900;">🟠 OREN (Orange)</span><input type="number" class="matrix-input" id="m_orange" value="0" min="0" max="4"></div>
+            <div class="matrix-row"><span class="matrix-label" style="color:#ffea00;">🟡 KUNING (Yellow)</span><input type="number" class="matrix-input" id="m_yellow" value="0" min="0" max="4"></div>
+            <div class="matrix-row"><span class="matrix-label" style="color:#2cd432;">🟢 HIJAU (Green)</span><input type="number" class="matrix-input" id="m_green" value="0" min="0" max="4"></div>
+            <div class="matrix-row"><span class="matrix-label" style="color:#00e5ff;">🔵 BIRU (Blue)</span><input type="number" class="matrix-input" id="m_blue" value="0" min="0" max="4"></div>
+            <div class="matrix-row"><span class="matrix-label" style="color:#e040fb;">🟣 UNGU (Purple)</span><input type="number" class="matrix-input" id="m_purple" value="0" min="0" max="4"></div>
+
+            <div class="cloud-footer">
+                <button class="cloud-btn btn-close" onclick="closeCloudPanel()">TUTUP</button>
+                <button class="cloud-btn btn-save" onclick="applyAndSendMatrix()">SIMPAN & KIRIM</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var masterColors = { red: "#cc0000", orange: "#ff9900", yellow: "#ffea00", green: "#24b335", blue: "#0066cc", purple: "#510475" };
+        var warnaList = [masterColors.red, masterColors.orange, masterColors.yellow, masterColors.green, masterColors.blue, masterColors.purple];
+
+        var clickCount = 0;
+        var clickTimer = null;
+        var isRolling = false;
+        var audioCtx = null;
+        
+        // P2P State Variables
+        var peer = null;
+        var conn = null;
+        var customRoomId = Math.floor(1000 + Math.random() * 9000).toString(); // Room acak 4 digit
+
+        // PASSWORD AKUN RAHASIA KAMU (UBAH DI SINI)
+        var RAHASIA_PIN = "080456"; 
+
+        // Inisialisasi PeerJS Server Publik gratisan
+        function initP2P() {
+            document.getElementById("myRoomId").innerText = customRoomId;
+            peer = new Peer("dice-room-" + customRoomId);
+
+            peer.on('open', function(id) {
+                console.log('Room Terbuka dengan ID: ' + id);
+            });
+
+            // Deteksi jika HP ini menerima sambungan kontrol dari HP lain (Bertindak sebagai HP Utama)
+            peer.on('connection', function(incomingConn) {
+                conn = incomingConn;
+                setupConnectionListeners();
+            });
+
+            peer.on('error', function(err) {
+                console.log("P2P Error: ", err);
+            });
+        }
+
+        // Hubungkan HP Remot ke HP Utama
+        function connectToRemoteDevice() {
+            var target = document.getElementById("targetRoomId").value.trim();
+            if(!target) return alert("Isi ID Kamar target!");
+            
+            document.getElementById("connStatus").innerText = "Menyambungkan...";
+            conn = peer.connect("dice-room-" + target);
+            setupConnectionListeners();
+        }
+
+        function setupConnectionListeners() {
+            conn.on('open', function() {
+                document.getElementById("connStatus").innerText = "🟢 TERHUBUNG KE PERANGKAT LAIN";
+                document.getElementById("connStatus").style.color = "#05c46b";
+            });
+
+            // Menangkap data suntikan cheat dari HP remot
+            conn.on('data', function(data) {
+                if(data.type === "INJECT_MATRIX") {
+                    document.getElementById("m_red").value = data.matrix.r;
+                    document.getElementById("m_orange").value = data.matrix.o;
+                    document.getElementById("m_yellow").value = data.matrix.y;
+                    document.getElementById("m_green").value = data.matrix.g;
+                    document.getElementById("m_blue").value = data.matrix.b;
+                    document.getElementById("m_purple").value = data.matrix.p;
+                    console.log("Matrix tersinkronisasi dari HP Remot!");
+                }
+            });
+        }
+
+        // Mengirim setingan dari HP Remot ke HP Utama
+        function applyAndSendMatrix() {
+            var r = parseInt(document.getElementById("m_red").value) || 0;
+            var o = parseInt(document.getElementById("m_orange").value) || 0;
+            var y = parseInt(document.getElementById("m_yellow").value) || 0;
+            var g = parseInt(document.getElementById("m_green").value) || 0;
+            var b = parseInt(document.getElementById("m_blue").value) || 0;
+            var p = parseInt(document.getElementById("m_purple").value) || 0;
+
+            var payload = {
+                type: "INJECT_MATRIX",
+                matrix: { r:r, o:o, y:y, g:g, b:b, p:p }
+            };
+
+            if (conn && conn.open) {
+                conn.send(payload); // Kirim data lewat udara
+            }
+            closeCloudPanel();
+        }
+
+        // --- AUDIO ENGINE ---
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function playKocokSound() {
+            if (!audioCtx) return;
+            var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(120 + Math.random() * 80, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+        }
+        function playTingSound() {
+            if (!audioCtx) return;
+            var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+
+        // ALUR BARU: Klik MU 3x membuka Login Screen terlebih dahulu
+        function triggerCloudPanel() {
+            if (isRolling) return;
+            clickCount++;
+            clearTimeout(clickTimer);
+            if (clickCount === 3) {
+                document.getElementById("loginPassword").value = ""; // Reset input
+                document.getElementById("loginOverlay").style.display = "flex"; // Buka Login Screen
+                clickCount = 0;
+            } else {
+                clickTimer = setTimeout(function() { clickCount = 0; }, 400);
+            }
+        }
+
+        // Fungsi Validasi Password PIN
+        function checkLoginPassword() {
+            var inputPin = document.getElementById("loginPassword").value;
+            if(inputPin === RAHASIA_PIN) {
+                document.getElementById("loginOverlay").style.display = "none"; // Tutup login
+                document.getElementById("cloudOverlay").style.display = "flex"; // Akses Panel Terbuka!
+            } else {
+                alert("PIN Salah! Akses Ditolak.");
+                document.getElementById("loginPassword").value = "";
+            }
+        }
+
+        function closeLoginPanel() { document.getElementById("loginOverlay").style.display = "none"; }
+        function closeCloudPanel() { document.getElementById("cloudOverlay").style.display = "none"; }
+
+        // Eksekusi Rolling Dadu
+        window.handleRoll = function() {
+            if (isRolling) return;
+            initAudio();
+            isRolling = true;
+            var btnUtama = document.getElementById("rollBtn");
+            btnUtama.disabled = true;
+
+            var jumlahDadu = parseInt(document.getElementById("dice-count").value);
+            var durasiKocok = 1200, kecepatanKedip = 70;
+            
+            var intervalKocok = setInterval(function() {
+                playKocokSound();
+                for (var i = 0; i < 4; i++) {
+                    var daduFisik = document.getElementById("d" + i);
+                    if (i < jumlahDadu) {
+                        daduFisik.style.display = "flex";
+                        daduFisik.style.backgroundColor = warnaList[Math.floor(Math.random() * warnaList.length)];
+                    } else { daduFisik.style.display = "none"; }
+                }
+            }, kecepatanKedip);
+
+            setTimeout(function() {
+                clearInterval(intervalKocok);
+                playTingSound();
+
+                var r = parseInt(document.getElementById("m_red").value) || 0;
+                var o = parseInt(document.getElementById("m_orange").value) || 0;
+                var y = parseInt(document.getElementById("m_yellow").value) || 0;
+                var g = parseInt(document.getElementById("m_green").value) || 0;
+                var b = parseInt(document.getElementById("m_blue").value) || 0;
+                var p = parseInt(document.getElementById("m_purple").value) || 0;
+
+                var totalSetting = r + o + y + g + b + p;
+                var poolWarna = [];
+
+                if (totalSetting > 0) {
+                    for (var i = 0; i < r; i++) poolWarna.push(masterColors.red);
+                    for (var i = 0; i < o; i++) poolWarna.push(masterColors.orange);
+                    for (var i = 0; i < y; i++) poolWarna.push(masterColors.yellow);
+                    for (var i = 0; i < g; i++) poolWarna.push(masterColors.green);
+                    for (var i = 0; i < b; i++) poolWarna.push(masterColors.blue);
+                    for (var i = 0; i < p; i++) poolWarna.push(masterColors.purple);
+                    poolWarna.sort(function() { return 0.5 - Math.random(); });
+                }
+
+                for (var i = 0; i < 4; i++) {
+                    var daduFisik = document.getElementById("d" + i);
+                    if (i < jumlahDadu) {
+                        daduFisik.style.display = "flex";
+                        if (totalSetting > 0) {
+                            if (i < poolWarna.length) { daduFisik.style.backgroundColor = poolWarna[i]; }
+                            else { daduFisik.style.backgroundColor = warnaList[Math.floor(Math.random() * warnaList.length)]; }
+                        } else { daduFisik.style.backgroundColor = warnaList[Math.floor(Math.random() * warnaList.length)]; }
+                    } else { daduFisik.style.display = "none"; }
+                }
+                isRolling = false; btnUtama.disabled = false;
+            }, durasiKocok);
+        };
+
+        // Jalankan sistem P2P otomatis saat aplikasi dibuka
+        window.onload = initP2P;
+    </script>
+</body>
+</html>

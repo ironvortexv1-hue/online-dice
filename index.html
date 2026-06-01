@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Dice Game</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* KODE CSS ASLI TETAP UTUH */
+        body { margin: 0; padding: 10px; font-family: 'Arial Black', Impact, sans-serif; background-color: var(--bg-color, #2496ff); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='%23ffffff' fill-opacity='0.06' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M30,20 L50,20 A4,4 0 0,1 54,24 L54,50 A4,4 0 0,1 50,54 L30,54 A4,4 0 0,1 26,50 L26,24 A4,4 0 0,1 30,20 Z' transform='rotate(-15 40 37)' /%3E%3Cpath d='M40,32 Q40,27 37,29 Q34,31 34,34 Q34,37 40,42 Q46,37 46,34 Q46,31 43,29 Q40,27 40,32 Z' transform='rotate(-15 40 37)' fill='%23ffffff' /%3E%3Cpath d='M110,30 L130,20 L150,30 L150,50 L130,60 L110,50 Z' /%3E%3Cpath d='M110,30 L130,40 L150,30 M130,40 L130,60' /%3E%3Ccircle cx='120' cy='38' r='1.5' /%3E%3Ccircle cx='124' cy='46' r='1.5' /%3E%3Ccircle cx='136' cy='48' r='1.5' /%3E%3Ccircle cx='142' cy='42' r='1.5' /%3E%3Cpath d='M85,85 L105,85 L100,105 L105,125 L85,125 L90,105 Z' /%3E%3Cline x1='83' y1='85' x2='107' y2='85' /%3E%3Cline x1='83' y1='125' x2='107' y2='125' /%3E%3Cpath d='M93,92 L97,92 L95,103 Z' fill='%23ffffff' /%3E%3Cpath d='M92,120 L98,120 L95,107 Z' fill='%23ffffff' /%3E%3Crect x='15' y='120' width='35' height='20' rx='2' transform='rotate(10 32 130)' /%3E%3Cline x1='32.5' y1='120' x2='32.5' y2='140' transform='rotate(10 32 130)' /%3E%3Ccircle cx='23' cy='130' r='1.5' /%3E%3Ccircle cx='42' cy='126' r='1.5' /%3E%3Ccircle cx='42' cy='134' r='1.5' /%3E%3Cpath d='M80,25 C83,25 83,28 80,28 C76,28 75,35 78,42 L72,45 L88,45 L82,42 C85,35 84,28 80,28 Z' /%3E%3Ccircle cx='80' cy='21' r='3.5' /%3E%3Crect x='70' y='45' width='20' height='3' rx='1' /%3E%3Cellipse cx='130' cy='115' rx='10' ry='5' /%3E%3Cellipse cx='130' cy='118' rx='10' ry='5' /%3E%3Cellipse cx='60' cy='75' rx='7' ry='3.5' /%3E%3Cpath d='M15,80 L18,83 L22,83 L19,86 L21,90 L15,88 L9,90 L11,86 L8,83 L12,83 Z' /%3E%3Cpath d='M105,10 L107,12 L110,12 L108,14 L109,17 L105,15 L101,17 L102,14 L100,12 L103,12 Z' /%3E%3C/g%3E%3C/svg%3E"); background-size: 260px 260px; transition: background-color 0.4s ease; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .game-container { position: relative; background-color: color-mix(in srgb, var(--bg-color, #2496ff) 80%, black 20%); border: 5px solid #ffffff; border-radius: 30px; padding: 20px; width: 95%; max-width: 440px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); text-align: center; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; transition: background-color 0.4s ease; }
+        .poker-badge { position: absolute; top: -20px; right: -20px; background-color: var(--bg-color, #2496ff); color: #ffffff; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; border: 4px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 10; transition: background-color 0.4s ease; cursor: pointer; }
+        
+        /* ONLINE DICE */
+        .game-title { font-family: 'Arial Black', Impact, sans-serif; font-size: 42px; margin: 5px 0; letter-spacing: 1px; color: #ffdf1b; -webkit-text-stroke: 2px #ffffff; text-shadow: none; }
+        
+        /* VIRTUAL DICE SIMULATOR: Putih, garis tua */
+        .game-subtitle { font-family: 'Arial Black', Impact, sans-serif; font-size: 18px; color: #ffffff; margin: 0 0 15px 0; letter-spacing: 1px; text-transform: uppercase; -webkit-text-stroke: 1px #333333; }
+        
+        .controls-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 20px; width: 100%; }
+        select { width: 32%; padding: 10px 5px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; font-size: 11px; color: #617d91; border: 3px solid #ffffff; border-radius: 10px; outline: none; cursor: pointer; background-color: #ffffff; text-align: center; }
+        .dice-display { display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 90px; margin-bottom: 20px; width: 100%; }
+        .dice { flex-basis: calc(25% - 12px); max-width: 75px; aspect-ratio: 1 / 1; border: 5px solid #ffffff; border-radius: 18px; display: flex; flex-shrink: 0; justify-content: center; align-items: center; box-shadow: 0 4px 0px rgba(0,0,0,0.12); box-sizing: border-box; transition: background-color 0.15s ease; position: relative; }
+        .dice.rolling { animation: shakeRoll 0.15s infinite linear; }
+        @keyframes shakeRoll { 0% { transform: translate(2px, 1px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        
+        /* ROLL AGAIN: Putih, garis kuning tua */
+        .btn-roll { background: linear-gradient(to bottom, #fff677 0%, #ffdf1b 30%, #fcd000 100%); color: #ffffff; border: 4px solid #fff29e; border-radius: 14px; width: 100%; padding: 15px 0; font-family: 'Arial Black', Gadget, Impact, sans-serif; font-size: 28px; font-weight: 900; letter-spacing: 2px; cursor: pointer; -webkit-text-stroke: 1.5px #a88600; text-shadow: none; box-shadow: 0 6px 0px #b59000, 0 8px 15px rgba(0, 0, 0, 0.2); transition: all 0.05s ease; margin-bottom: 15px; text-transform: uppercase; }
+        
+        .btn-roll:active { transform: translateY(3px); box-shadow: 0 3px 0px #b59000, 0 4px 8px rgba(0, 0, 0, 0.2); }
+        .color-info { color: #b3dbff; font-family: system-ui, sans-serif; font-size: 12px; font-weight: bold; line-height: 1.5; margin-bottom: 15px; }
+        .c-red { color: #ff4444; } .c-orange { color: #ff9800; } .c-yellow { color: #ffeb3b; } .c-green { color: #4caf50; } .c-blue { color: #2196f3; } .c-purple { color: #9c27b0; }
+        .history-section { text-align: left; width: 100%; }
+        .history-header h3 { color: #ffffff; font-size: 20px; margin: 0 0 10px 0; text-align: center; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; width: 100%; }
+        .history-row { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
+        .history-index { color: #ffffff; font-size: 14px; width: 25px; font-weight: bold; }
+        .history-dice-container { display: flex; gap: 6px; }
+        .mini-dice { width: 26px; height: 26px; border: 2px solid #ffffff; border-radius: 6px; display: flex; justify-content: center; align-items: center; }
+        .mini-dot { width: 8px; height: 8px; background-color: #ffffff; border-radius: 50%; }
+        #adminModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; }
+        #adminPanel { display: none; width: 100%; margin: 15px 0; padding: 15px; background: #1c252e; border: 2px solid #2ecc71; border-radius: 10px; color: white; }
+    </style>
+</head>
+<body>
+    <div id="adminModal">
+        <div style="background:#1c252e; padding:25px; border-radius:15px; border:2px solid #3498db; text-align:center; color:white; width:85%; max-width:320px;">
+            <h3 style="color:#f1c40f;">🔑 ADMIN VERIFICATION</h3>
+            <input type="password" id="pinInput" placeholder="ENTER PIN" style="padding:12px; width:80%; border-radius:5px; border:1px solid #ccc; text-align:center;">
+            <br><br>
+            <button onclick="document.getElementById('adminModal').style.display='none'" style="padding:8px 15px; cursor:pointer;">BATAL</button>
+            <button onclick="checkPin()" style="padding:8px 15px; background:#3498db; color:white; border:none; cursor:pointer;">MASUK</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="poker-badge" id="pokerBtn" style="user-select: none; -webkit-tap-highlight-color: transparent;">♠</div>
+        
+        <div id="adminPanel">
+            <h4 style="margin:0 0 10px 0; color:#2ecc71;">☁ Cloud Controller Intercom</h4>
+            <div style="background:#000; padding:10px; margin-bottom:10px; border-radius:5px; font-size:14px;">
+                KODE KAMAR: <span id="myRoomCode" style="color:#2ecc71; font-weight:bold;">---</span>
+            </div>
+            <input type="text" id="targetCode" placeholder="Masukkan Kode HP A" style="width:100%; padding:8px; box-sizing:border-box;">
+            <button onclick="connectDevices()" style="width:100%; margin-top:5px; background:#3498db; color:white; border:none; padding:8px; cursor:pointer;">SAMBUNGKAN</button>
+            <button id="btnToggleRandom" onclick="toggleAutoRandom()" style="width:100%; margin-top:10px; background:#2ecc71; color:white; border:none; padding:8px; cursor:pointer;">RANDOM ALL DADU: ON</button>
+            <button onclick="document.getElementById('adminPanel').style.display='none'" style="width:100%; margin-top:10px; background:#95a5a6; color:white; border:none; padding:8px; cursor:pointer;">BACK</button>
+            <div style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:4px;">
+                <select id="fD1" onchange="sendConfig()"><option value="0">🟥</option><option value="1">🟧</option><option value="2">🟨</option><option value="3">🟩</option><option value="4">🟦</option><option value="5">🟪</option></select>
+                <select id="fD2" onchange="sendConfig()"><option value="0">🟥</option><option value="1">🟧</option><option value="2">🟨</option><option value="3">🟩</option><option value="4">🟦</option><option value="5">🟪</option></select>
+                <select id="fD3" onchange="sendConfig()"><option value="0">🟥</option><option value="1">🟧</option><option value="2">🟨</option><option value="3">🟩</option><option value="4">🟦</option><option value="5">🟪</option></select>
+                <select id="fD4" onchange="sendConfig()"><option value="0">🟥</option><option value="1">🟧</option><option value="2">🟨</option><option value="3">🟩</option><option value="4">🟦</option><option value="5">🟪</option></select>
+            </div>
+        </div>
+
+        <h1 class="game-title">ONLINE DICE</h1>
+        <h2 class="game-subtitle">VIRTUAL DICE SIMULATOR</h2>
+        
+        <div class="controls-row">
+            <select id="diceCount">
+                <option value="1">1 DICE</option><option value="2">2 DICE</option>
+                <option value="3">3 DICE</option><option value="4" selected>4 DICE</option>
+            </select>
+            <select id="diceMode"><option value="color" selected>COLOR DICE</option></select>
+            <select id="themeSelect">
+                <option value="#2496ff" selected>BLUE THEME</option><option value="#ff4444">RED THEME</option>
+                <option value="#4caf50">GREEN THEME</option><option value="#9c27b0">PURPLE THEME</option>
+            </select>
+        </div>
+        <div class="dice-display" id="diceDisplay"></div>
+        <button class="btn-roll" id="btnRoll">ROLL AGAIN !</button>
+        
+        <div class="color-info">
+            Possible colors are: <span class="c-red">Red</span>, <span class="c-orange">Orange</span>, 
+            <span class="c-yellow">Yellow</span>, <span class="c-green">Green</span>, 
+            <span class="c-blue">Blue</span> and <span class="c-purple">Purple</span>.
+        </div>
+        <div class="history-section">
+            <div class="history-header"><h3>YOUR LAST 20 ROLLS</h3></div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        const shortId = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const peer = new Peer(shortId); 
+        let conn;
+        peer.on('open', (id) => { document.getElementById('myRoomCode').innerText = id; });
+        peer.on('connection', (c) => { conn = c; setupConn(); });
+
+        let pokerClicks = 0;
+        let lastClick = 0;
+        document.getElementById('pokerBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            let now = new Date().getTime();
+            if(now - lastClick > 1000) pokerClicks = 0;
+            pokerClicks++;
+            lastClick = now;
+            if(pokerClicks === 5) {
+                document.getElementById('adminModal').style.display = 'flex';
+                pokerClicks = 0;
+            }
+        });
+
+        const colors = [
+            { name: 'Red', hex: '#ff4444' }, { name: 'Orange', hex: '#ff9800' },
+            { name: 'Yellow', hex: '#ffeb3b' }, { name: 'Green', hex: '#4caf50' },
+            { name: 'Blue', hex: '#2196f3' }, { name: 'Purple', hex: '#9c27b0' }
+        ];
+
+        let autoRandomActive = true;
+
+        function checkPin() {
+            if(document.getElementById('pinInput').value === '080456') {
+                document.getElementById('adminModal').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('pinInput').value = '';
+            } else { alert('PIN SALAH!'); }
+        }
+
+        function connectDevices() {
+            const target = document.getElementById('targetCode').value.toUpperCase();
+            conn = peer.connect(target);
+            setupConn();
+            alert('Menghubungkan ke: ' + target);
+        }
+
+        function setupConn() {
+            conn.on('data', (data) => {
+                autoRandomActive = data.random;
+                document.getElementById('fD1').value = data.d1;
+                document.getElementById('fD2').value = data.d2;
+                document.getElementById('fD3').value = data.d3;
+                document.getElementById('fD4').value = data.d4;
+                
+                // Update UI tombol random di HP A agar sinkron
+                const btn = document.getElementById('btnToggleRandom');
+                btn.innerText = autoRandomActive ? "RANDOM ALL DADU: ON" : "RANDOM ALL DADU: OFF";
+                btn.style.backgroundColor = autoRandomActive ? "#2ecc71" : "#e67e22";
+            });
+        }
+
+        function sendConfig() {
+            if(conn && conn.open) {
+                conn.send({
+                    random: autoRandomActive,
+                    d1: document.getElementById('fD1').value,
+                    d2: document.getElementById('fD2').value,
+                    d3: document.getElementById('fD3').value,
+                    d4: document.getElementById('fD4').value
+                });
+            }
+        }
+        
+        function toggleAutoRandom() {
+            autoRandomActive = !autoRandomActive;
+            const btn = document.getElementById('btnToggleRandom');
+            btn.innerText = autoRandomActive ? "RANDOM ALL DADU: ON" : "RANDOM ALL DADU: OFF";
+            btn.style.backgroundColor = autoRandomActive ? "#2ecc71" : "#e67e22";
+            sendConfig(); // Kirim perubahan status random ke HP A
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'shake') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400 + Math.random() * 200, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05); }
+            else if (type === 'land') { osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+        }
+
+        let historyData = [];
+        const diceCountSelect = document.getElementById('diceCount');
+        const themeSelect = document.getElementById('themeSelect');
+        const diceDisplay = document.getElementById('diceDisplay');
+        const btnRoll = document.getElementById('btnRoll');
+        const historyList = document.getElementById('historyList');
+
+        themeSelect.addEventListener('change', (e) => { document.body.style.setProperty('--bg-color', e.target.value); });
+
+        function rollDice() {
+            btnRoll.disabled = true; diceDisplay.innerHTML = '';
+            for(let i=0; i<8; i++) { setTimeout(() => playSound('shake'), i * 100); }
+            const count = parseInt(diceCountSelect.value);
+            for(let i=0; i<count; i++){ const d = document.createElement('div'); d.className = 'dice rolling'; diceDisplay.appendChild(d); }
+            setTimeout(() => {
+                playSound('land'); diceDisplay.innerHTML = '';
+                const currentRollResult = [];
+                const ids = ['fD1', 'fD2', 'fD3', 'fD4'];
+                for (let i = 0; i < count; i++) {
+                    let colorIndex = autoRandomActive ? Math.floor(Math.random() * 6) : parseInt(document.getElementById(ids[i]).value);
+                    let color = colors[colorIndex];
+                    currentRollResult.push(color);
+                    const dice = document.createElement('div'); dice.className = 'dice'; dice.style.backgroundColor = color.hex;
+                    const dot = document.createElement('div'); dot.className = 'mini-dot';
+                    dice.appendChild(dot); diceDisplay.appendChild(dice);
+                }
+                historyData.unshift(currentRollResult); if(historyData.length > 20) historyData.pop();
+                renderHistory(); btnRoll.disabled = false;
+            }, 800);
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            historyData.forEach((roll, index) => {
+                const row = document.createElement('div'); row.className = 'history-row'; row.innerHTML = `<span class="history-index">${index + 1}.</span>`;
+                const cont = document.createElement('div'); cont.className = 'history-dice-container';
+                roll.forEach(c => { 
+                    const mini = document.createElement('div'); mini.className = 'mini-dice'; mini.style.backgroundColor = c.hex;
+                    const dot = document.createElement('div'); dot.className = 'mini-dot';
+                    mini.appendChild(dot);
+                    cont.appendChild(mini); 
+                });
+                row.appendChild(cont); historyList.appendChild(row);
+            });
+        }
+        btnRoll.addEventListener('click', rollDice);
+        function initDice() { diceDisplay.innerHTML = ''; for(let i=0; i<parseInt(diceCountSelect.value); i++){ const d = document.createElement('div'); d.className = 'dice'; d.style.backgroundColor = '#ffffff'; diceDisplay.appendChild(d); } }
+        initDice();
+        diceCountSelect.addEventListener('change', initDice);
+    </script>
+</body>
+</html>
